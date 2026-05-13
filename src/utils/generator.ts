@@ -1,6 +1,7 @@
 import type { SudokuCell, CellPosition, Difficulty } from '../types';
+import type { GameMode } from '../components/ControlButtons';
 
-export function generateSudoku(size: Difficulty): { puzzle: SudokuCell[][]; solution: number[][] } {
+export function generateSudoku(size: Difficulty, gameMode: GameMode = 'normal'): { puzzle: SudokuCell[][]; solution: number[][] } {
   const grid: number[][] = Array(size).fill(null).map(() => Array(size).fill(0));
   const subSize = size === 4 ? 2 : size === 6 ? 2 : 3;
   
@@ -23,7 +24,7 @@ export function generateSudoku(size: Difficulty): { puzzle: SudokuCell[][]; solu
   fillGrid(0, 0);
   
   const solution = grid.map(row => [...row]);
-  const puzzle = createPuzzle(grid, size);
+  const puzzle = createPuzzle(grid, size, gameMode);
   
   return { puzzle, solution };
 }
@@ -56,8 +57,10 @@ function isValidPlacement(
   return true;
 }
 
-function createPuzzle(grid: number[][], size: Difficulty): SudokuCell[][] {
-  const cellsToRemove = size === 4 ? 6 : size === 6 ? 18 : 40;
+function createPuzzle(grid: number[][], size: Difficulty, gameMode: GameMode): SudokuCell[][] {
+  const modeMultiplier = gameMode === 'normal' ? 0.5 : gameMode === 'hard' ? 0.7 : 0.85;
+  const totalCells = size * size;
+  const cellsToRemove = Math.floor(totalCells * modeMultiplier);
   const positions: [number, number][] = [];
   
   for (let i = 0; i < size; i++) {

@@ -48,6 +48,31 @@ export const Cell = memo(function Cell({
   };
   
   const borderStyles = getBorderStyle();
+
+  // 获取文字颜色：固定数字用深色，用户填写的正确数字用绿色
+  const getTextColor = () => {
+    if (cell.isFixed) {
+      return '#1a1a2e';
+    }
+    if (isConflict) {
+      return '#ea580c';
+    }
+    if (cell.value !== null) {
+      return '#4a7c59';
+    }
+    return '#4a5568';
+  };
+
+  // 获取字体粗细：初始数字不加粗，用户填写的数字加粗
+  const getFontWeight = () => {
+    if (cell.isFixed) {
+      return '400';
+    }
+    if (cell.value !== null) {
+      return '700';
+    }
+    return '500';
+  };
   
   const gridStyle: React.CSSProperties = {
     width: `${cellSize}px`,
@@ -56,7 +81,7 @@ export const Cell = memo(function Cell({
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: `${cellSize * 0.5}px`,
-    fontWeight: cell.isFixed ? '700' : '500',
+    fontWeight: getFontWeight(),
     fontFamily: '"DM Sans", sans-serif',
     backgroundColor: isSelected
       ? '#fff5f3'
@@ -65,11 +90,7 @@ export const Cell = memo(function Cell({
         : isRelated
           ? '#f5f0e8'
           : '#ffffff',
-    color: cell.isFixed
-      ? '#1a1a2e'
-      : isConflict
-        ? '#ea580c'
-        : '#4a5568',
+    color: getTextColor(),
     borderTop: borderStyles.top,
     borderBottom: borderStyles.bottom,
     borderLeft: borderStyles.left,

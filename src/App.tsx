@@ -7,10 +7,12 @@ import { DifficultySelector } from './components/DifficultySelector';
 import { Timer } from './components/Timer';
 import { SuccessModal } from './components/SuccessModal';
 import type { Difficulty } from './types';
+import type { GameMode } from './components/ControlButtons';
 
 function App() {
   const [boardSize, setBoardSize] = useState(320);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [gameMode, setGameMode] = useState<GameMode>('normal');
   
   const {
     state,
@@ -21,16 +23,15 @@ function App() {
     toggleNote,
     toggleNoteMode,
     undo,
-    useHint,
     resetGame,
     pauseGame,
     resumeGame,
   } = useSudoku();
 
   useEffect(() => {
-    startNewGame(4);
+    startNewGame(4, gameMode);
     setIsInitialized(true);
-  }, [startNewGame]);
+  }, []);
 
   useEffect(() => {
     const updateBoardSize = () => {
@@ -46,8 +47,13 @@ function App() {
   }, []);
 
   const handleDifficultyChange = useCallback((difficulty: Difficulty) => {
-    startNewGame(difficulty);
-  }, [startNewGame]);
+    startNewGame(difficulty, gameMode);
+  }, [startNewGame, gameMode]);
+
+  const handleModeChange = useCallback((mode: GameMode) => {
+    setGameMode(mode);
+    startNewGame(state.size, mode);
+  }, [startNewGame, state.size]);
 
   const handleNumberClick = useCallback((num: number) => {
     if (state.isNoteMode) {
@@ -69,10 +75,18 @@ function App() {
     alignItems: 'center',
     padding: '24px',
     fontFamily: '"Noto Sans SC", sans-serif',
+    position: 'relative',
     backgroundImage: `
       radial-gradient(circle at 20% 80%, rgba(196, 92, 72, 0.05) 0%, transparent 50%),
       radial-gradient(circle at 80% 20%, rgba(74, 124, 89, 0.05) 0%, transparent 50%)
     `,
+  };
+
+  const timerStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '24px',
+    right: '24px',
+    zIndex: 100,
   };
 
   const headerStyle: React.CSSProperties = {
@@ -135,6 +149,10 @@ function App() {
 
   return (
     <div style={containerStyle}>
+      <div style={timerStyle}>
+        <Timer elapsedTime={state.elapsedTime} isPaused={state.isPaused} />
+      </div>
+
       <header style={headerStyle}>
         <h1 style={titleStyle}>数独</h1>
         <p style={subtitleStyle}>在禅意中享受逻辑的乐趣</p>
@@ -159,10 +177,6 @@ function App() {
         )}
       </div>
 
-      <div style={{ marginBottom: '16px' }}>
-        <Timer elapsedTime={state.elapsedTime} isPaused={state.isPaused} />
-      </div>
-
       <NumberPad
         maxNumber={state.size}
         onNumberClick={handleNumberClick}
@@ -173,14 +187,14 @@ function App() {
         <ControlButtons
           isNoteMode={state.isNoteMode}
           canUndo={state.historyIndex >= 0}
-          canRedo={false}
           isPaused={state.isPaused}
+          currentMode={gameMode}
           onToggleNote={toggleNoteMode}
           onUndo={undo}
-          onHint={useHint}
           onReset={resetGame}
           onPause={pauseGame}
           onResume={resumeGame}
+          onModeChange={handleModeChange}
         />
       </div>
 

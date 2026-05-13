@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GameState, SudokuCell, HistoryEntry, CellPosition, Difficulty } from '../types';
 import { generateSudoku, getHint } from '../utils/generator';
 import { checkConflicts, isComplete as checkIsComplete } from '../utils/validator';
+import type { GameMode } from '../components/ControlButtons';
 
 const initialState: GameState = {
   grid: [],
@@ -38,9 +39,9 @@ export function useSudoku() {
     }
   }, []);
 
-  const startNewGame = useCallback((size: Difficulty) => {
+  const startNewGame = useCallback((size: Difficulty, gameMode: GameMode = 'normal') => {
     stopTimer();
-    const { puzzle, solution } = generateSudoku(size);
+    const { puzzle, solution } = generateSudoku(size, gameMode);
     
     setState({
       ...initialState,

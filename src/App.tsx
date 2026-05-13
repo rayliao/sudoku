@@ -98,15 +98,9 @@ function App() {
     fontSize: '36px',
     fontWeight: '700',
     color: '#1a1a2e',
-    marginBottom: '8px',
+    marginBottom: '16px',
     fontFamily: '"Noto Serif SC", serif',
     letterSpacing: '0.1em',
-  };
-
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#718096',
-    marginBottom: '24px',
   };
 
   const boardContainerStyle: React.CSSProperties = {
@@ -155,7 +149,6 @@ function App() {
 
       <header style={headerStyle}>
         <h1 style={titleStyle}>数独</h1>
-        <p style={subtitleStyle}>在禅意中享受逻辑的乐趣</p>
         <DifficultySelector
           current={state.size}
           onChange={handleDifficultyChange}

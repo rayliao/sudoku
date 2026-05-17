@@ -6,6 +6,7 @@ import { getRelatedCells, checkConflicts } from '../utils/validator';
 interface SudokuBoardProps {
   grid: SudokuCell[][];
   selectedCell: CellPosition | null;
+  selectedValue: number | null;
   size: Difficulty;
   boardSize: number;
   onCellClick: (row: number, col: number) => void;
@@ -14,6 +15,7 @@ interface SudokuBoardProps {
 export function SudokuBoard({
   grid,
   selectedCell,
+  selectedValue,
   size,
   boardSize,
   onCellClick,
@@ -55,6 +57,7 @@ export function SudokuBoard({
             }
             isRelated={relatedCells.has(`${rowIndex}-${colIndex}`)}
             isConflict={conflicts.has(`${rowIndex}-${colIndex}`)}
+            isSameValue={selectedValue !== null && cell.value === selectedValue}
             size={size}
             cellSize={cellSize}
             row={rowIndex}

@@ -69,29 +69,32 @@ function isValidPlacement(
 function countSolutions(grid: number[][], subGrid: { rows: number; cols: number }, maxCount: number = 2): number {
   const size = grid.length;
   let count = 0;
+  let foundEnough = false;
   
-  const solve = (): boolean => {
-    for (let row = 0; row < size; row++) {
-      for (let col = 0; col < size; col++) {
+  const solve = (): void => {
+    if (foundEnough) return;
+    
+    for (let row = 0; row < size && !foundEnough; row++) {
+      for (let col = 0; col < size && !foundEnough; col++) {
         if (grid[row][col] === 0) {
-          for (let num = 1; num <= size; num++) {
+          for (let num = 1; num <= size && !foundEnough; num++) {
             if (isValidPlacement(grid, row, col, num, subGrid)) {
               grid[row][col] = num;
-              if (solve()) {
-                if (count >= maxCount) {
-                  grid[row][col] = 0;
-                  return true;
-                }
-              }
+              solve();
               grid[row][col] = 0;
             }
           }
-          return false;
+          return;
         }
       }
     }
-    count++;
-    return count >= maxCount;
+    
+    if (!foundEnough) {
+      count++;
+      if (count >= maxCount) {
+        foundEnough = true;
+      }
+    }
   };
   
   solve();

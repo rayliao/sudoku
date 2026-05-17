@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSudoku } from './hooks/useSudoku';
 import { SudokuBoard } from './components/SudokuBoard';
 import { NumberPad } from './components/NumberPad';
@@ -8,6 +8,21 @@ import { Timer } from './components/Timer';
 import { SuccessModal } from './components/SuccessModal';
 import type { Difficulty } from './types';
 import type { GameMode } from './components/ControlButtons';
+
+const STORAGE_KEY = 'sudoku_game_state';
+
+function hasSavedGame(): boolean {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return !!(parsed.grid && parsed.grid.length > 0 && parsed.solution && parsed.solution.length > 0);
+    }
+  } catch (e) {
+    return false;
+  }
+  return false;
+}
 
 function App() {
   const [boardSize, setBoardSize] = useState(320);
@@ -22,14 +37,16 @@ function App() {
     clearCell,
     toggleNote,
     toggleNoteMode,
-    undo,
+    useHint,
     resetGame,
     pauseGame,
     resumeGame,
   } = useSudoku();
 
   useEffect(() => {
-    startNewGame(4, gameMode);
+    if (!hasSavedGame()) {
+      startNewGame(9, gameMode);
+    }
     setIsInitialized(true);
   }, []);
 
@@ -66,6 +83,34 @@ function App() {
   const handleCellClick = useCallback((row: number, col: number) => {
     selectCell(row, col);
   }, [selectCell]);
+
+  const selectedValue = useMemo(() => {
+    if (!state.selectedCell) return null;
+    return state.grid[state.selectedCell.row]?.[state.selectedCell.col]?.value ?? null;
+  }, [state.selectedCell, state.grid]);
+
+  const completedNumbers = useMemo(() => {
+    const count: Record<number, number> = {};
+    const size = state.size;
+    for (let i = 1; i <= size; i++) {
+      count[i] = 0;
+    }
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        const val = state.grid[i]?.[j]?.value;
+        if (val !== null && val !== undefined) {
+          count[val] = (count[val] || 0) + 1;
+        }
+      }
+    }
+    const completed: number[] = [];
+    for (let i = 1; i <= size; i++) {
+      if (count[i] >= size) {
+        completed.push(i);
+      }
+    }
+    return completed;
+  }, [state.grid, state.size]);
 
   const containerStyle: React.CSSProperties = {
     minHeight: '100vh',
@@ -159,6 +204,7 @@ function App() {
         <SudokuBoard
           grid={state.grid}
           selectedCell={state.selectedCell}
+          selectedValue={selectedValue}
           size={state.size}
           boardSize={boardSize}
           onCellClick={handleCellClick}
@@ -172,6 +218,7 @@ function App() {
 
       <NumberPad
         maxNumber={state.size}
+        completedNumbers={completedNumbers}
         onNumberClick={handleNumberClick}
         onDeleteClick={clearCell}
       />
@@ -179,11 +226,10 @@ function App() {
       <div style={{ marginTop: '16px' }}>
         <ControlButtons
           isNoteMode={state.isNoteMode}
-          canUndo={state.historyIndex >= 0}
           isPaused={state.isPaused}
           currentMode={gameMode}
           onToggleNote={toggleNoteMode}
-          onUndo={undo}
+          onHint={useHint}
           onReset={resetGame}
           onPause={pauseGame}
           onResume={resumeGame}

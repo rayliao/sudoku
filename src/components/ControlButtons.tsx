@@ -1,15 +1,14 @@
 import { memo } from 'react';
-import { Pencil, Undo2, RotateCcw, Play, Pause } from 'lucide-react';
+import { Pencil, Lightbulb, RotateCcw, Play, Pause } from 'lucide-react';
 
 export type GameMode = 'normal' | 'hard' | 'hell';
 
 interface ControlButtonsProps {
   isNoteMode: boolean;
-  canUndo: boolean;
   isPaused: boolean;
   currentMode: GameMode;
   onToggleNote: () => void;
-  onUndo: () => void;
+  onHint: () => void;
   onReset: () => void;
   onPause: () => void;
   onResume: () => void;
@@ -24,11 +23,10 @@ export const MODE_LABELS: Record<GameMode, string> = {
 
 export const ControlButtons = memo(function ControlButtons({
   isNoteMode,
-  canUndo,
   isPaused,
   currentMode,
   onToggleNote,
-  onUndo,
+  onHint,
   onReset,
   onPause,
   onResume,
@@ -144,10 +142,8 @@ export const ControlButtons = memo(function ControlButtons({
 
       <button
         style={buttonStyle('primary')}
-        onClick={onUndo}
-        disabled={!canUndo}
+        onClick={onHint}
         onMouseDown={e => {
-          if (!canUndo) return;
           (e.target as HTMLElement).style.transform = 'scale(0.95)';
         }}
         onMouseUp={e => {
@@ -157,8 +153,8 @@ export const ControlButtons = memo(function ControlButtons({
           (e.target as HTMLElement).style.transform = 'scale(1)';
         }}
       >
-        <Undo2 size={16} />
-        撤销
+        <Lightbulb size={16} />
+        提示
       </button>
 
       <button

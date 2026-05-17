@@ -6,6 +6,7 @@ interface CellProps {
   isSelected: boolean;
   isRelated: boolean;
   isConflict: boolean;
+  isSameValue: boolean;
   size: number;
   cellSize: number;
   row: number;
@@ -18,6 +19,7 @@ export const Cell = memo(function Cell({
   isSelected,
   isRelated,
   isConflict,
+  isSameValue,
   size,
   cellSize,
   row,
@@ -46,7 +48,6 @@ export const Cell = memo(function Cell({
   
   const borderStyles = getBorderStyle();
 
-  // 获取文字颜色：固定数字用深色，用户填写的正确数字用绿色
   const getTextColor = () => {
     if (cell.isFixed) {
       return '#1a1a2e';
@@ -60,7 +61,6 @@ export const Cell = memo(function Cell({
     return '#4a5568';
   };
 
-  // 获取字体粗细：初始数字不加粗，用户填写的数字加粗
   const getFontWeight = () => {
     if (cell.isFixed) {
       return '400';
@@ -69,6 +69,22 @@ export const Cell = memo(function Cell({
       return '700';
     }
     return '500';
+  };
+
+  const getBackgroundColor = () => {
+    if (isSelected) {
+      return '#fff5f3';
+    }
+    if (isConflict) {
+      return '#fff7ed';
+    }
+    if (isSameValue && cell.value !== null) {
+      return '#fee2e2';
+    }
+    if (isRelated) {
+      return '#f5f0e8';
+    }
+    return '#ffffff';
   };
   
   const gridStyle: React.CSSProperties = {
@@ -80,13 +96,7 @@ export const Cell = memo(function Cell({
     fontSize: `${cellSize * 0.5}px`,
     fontWeight: getFontWeight(),
     fontFamily: '"DM Sans", sans-serif',
-    backgroundColor: isSelected
-      ? '#fff5f3'
-      : isConflict
-        ? '#fff7ed'
-        : isRelated
-          ? '#f5f0e8'
-          : '#ffffff',
+    backgroundColor: getBackgroundColor(),
     color: getTextColor(),
     borderTop: borderStyles.top,
     borderBottom: borderStyles.bottom,

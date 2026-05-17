@@ -4,6 +4,8 @@ import { generateSudoku, getHint } from '../utils/generator';
 import { checkConflicts, isComplete as checkIsComplete } from '../utils/validator';
 import type { GameMode } from '../components/ControlButtons';
 
+const STORAGE_KEY = 'sudoku_game_state';
+
 const initialState: GameState = {
   grid: [],
   solution: [],
@@ -18,9 +20,62 @@ const initialState: GameState = {
   isPaused: false,
 };
 
+function loadSavedState(): Partial<GameState> | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.grid && parsed.grid.length > 0 && parsed.solution && parsed.solution.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load saved game state:', e);
+  }
+  return null;
+}
+
+function saveState(state: GameState): void {
+  try {
+    const toSave = {
+      grid: state.grid,
+      solution: state.solution,
+      size: state.size,
+      elapsedTime: state.elapsedTime,
+      hintsUsed: state.hintsUsed,
+      history: state.history,
+      historyIndex: state.historyIndex,
+      isComplete: state.isComplete,
+      isPaused: state.isPaused,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.warn('Failed to save game state:', e);
+  }
+}
+
+function clearSavedState(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {
+    console.warn('Failed to clear saved game state:', e);
+  }
+}
+
 export function useSudoku() {
-  const [state, setState] = useState<GameState>(initialState);
+  const [state, setState] = useState<GameState>(() => {
+    const saved = loadSavedState();
+    if (saved) {
+      return {
+        ...initialState,
+        ...saved,
+        isPaused: false,
+      };
+    }
+    return initialState;
+  });
   const timerRef = useRef<number | null>(null);
+  const isInitializedRef = useRef(false);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) return;
@@ -43,12 +98,15 @@ export function useSudoku() {
     stopTimer();
     const { puzzle, solution } = generateSudoku(size, gameMode);
     
-    setState({
+    const newState = {
       ...initialState,
       grid: puzzle,
       solution,
       size,
-    });
+    };
+    
+    setState(newState);
+    clearSavedState();
     
     setTimeout(() => startTimer(), 100);
   }, [stopTimer, startTimer]);
@@ -88,17 +146,20 @@ export function useSudoku() {
       const conflicts = checkConflicts(newGrid, prev.size);
       const isComplete = checkIsComplete(newGrid, prev.size);
       
-      if (isComplete) {
-        stopTimer();
-      }
-      
-      return {
+      const newState = {
         ...prev,
         grid: newGrid,
         history: newHistory,
         historyIndex: newHistory.length - 1,
         isComplete,
       };
+      
+      if (isComplete) {
+        stopTimer();
+        clearSavedState();
+      }
+      
+      return newState;
     });
   }, [stopTimer]);
 
@@ -226,11 +287,8 @@ export function useSudoku() {
       newGrid[hint.row][hint.col].notes = [];
       
       const isComplete = checkIsComplete(newGrid, prev.size);
-      if (isComplete) {
-        stopTimer();
-      }
       
-      return {
+      const newState = {
         ...prev,
         grid: newGrid,
         selectedCell: hint,
@@ -239,6 +297,13 @@ export function useSudoku() {
         hintsUsed: prev.hintsUsed + 1,
         isComplete,
       };
+      
+      if (isComplete) {
+        stopTimer();
+        clearSavedState();
+      }
+      
+      return newState;
     });
   }, [stopTimer]);
 
@@ -256,6 +321,7 @@ export function useSudoku() {
       );
       
       stopTimer();
+      clearSavedState();
       
       return {
         ...prev,
@@ -281,6 +347,21 @@ export function useSudoku() {
   useEffect(() => {
     return () => stopTimer();
   }, [stopTimer]);
+
+  useEffect(() => {
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      const saved = loadSavedState();
+      if (saved && saved.grid && saved.grid.length > 0) {
+        setTimeout(() => startTimer(), 100);
+      }
+      return;
+    }
+    
+    if (state.grid.length > 0 && !state.isComplete) {
+      saveState(state);
+    }
+  }, [state]);
 
   return {
     state,

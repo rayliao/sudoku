@@ -24,20 +24,17 @@ export const Cell = memo(function Cell({
   col,
   onClick,
 }: CellProps) {
-  const subSize = size === 4 ? 2 : size === 6 ? 2 : 3;
-  // 判断是否是宫格的右边界或下边界
-  const isBoxEdgeRight = (col + 1) % subSize === 0 && col !== size - 1;
-  const isBoxEdgeBottom = (row + 1) % subSize === 0 && row !== size - 1;
+  const subGridRows = size === 4 ? 2 : size === 6 ? 2 : 3;
+  const subGridCols = size === 4 ? 2 : size === 6 ? 3 : 3;
 
-  // 边框样式：小宫格之间的边界用深色区分
   const getBorderStyle = () => {
     const baseBorder = '1px solid #d1ccc4';
     const boxBorder = '1px solid #1a1a2e';
     
-    // 上边框：如果上一行是宫格边界，则用深色
-    const isBoxEdgeTop = row % subSize === 0 && row !== 0;
-    // 左边框：如果左一列是宫格边界，则用深色
-    const isBoxEdgeLeft = col % subSize === 0 && col !== 0;
+    const isBoxEdgeTop = row % subGridRows === 0 && row !== 0;
+    const isBoxEdgeBottom = (row + 1) % subGridRows === 0 && row !== size - 1;
+    const isBoxEdgeLeft = col % subGridCols === 0 && col !== 0;
+    const isBoxEdgeRight = (col + 1) % subGridCols === 0 && col !== size - 1;
     
     return {
       top: isBoxEdgeTop ? boxBorder : baseBorder,
@@ -95,6 +92,10 @@ export const Cell = memo(function Cell({
     borderBottom: borderStyles.bottom,
     borderLeft: borderStyles.left,
     borderRight: borderStyles.right,
+    borderTopLeftRadius: row === 0 && col === 0 ? '7px' : '0',
+    borderTopRightRadius: row === 0 && col === size - 1 ? '7px' : '0',
+    borderBottomLeftRadius: row === size - 1 && col === 0 ? '7px' : '0',
+    borderBottomRightRadius: row === size - 1 && col === size - 1 ? '7px' : '0',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
     position: 'relative',
@@ -103,8 +104,8 @@ export const Cell = memo(function Cell({
 
   const notesStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: `repeat(${subSize}, 1fr)`,
-    gridTemplateRows: `repeat(${subSize}, 1fr)`,
+    gridTemplateColumns: `repeat(${subGridCols}, 1fr)`,
+    gridTemplateRows: `repeat(${subGridRows}, 1fr)`,
     width: '100%',
     height: '100%',
     padding: '2px',

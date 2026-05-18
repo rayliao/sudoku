@@ -6,8 +6,11 @@ import { ControlButtons } from './components/ControlButtons';
 import { DifficultySelector } from './components/DifficultySelector';
 import { Timer } from './components/Timer';
 import { SuccessModal } from './components/SuccessModal';
+import { HelpModal } from './components/HelpModal';
+import { Toaster, toast } from 'sonner';
 import type { Difficulty } from './types';
 import type { GameMode } from './components/ControlButtons';
+import type { HintInfo } from './utils/generator';
 
 const STORAGE_KEY = 'sudoku_game_state';
 
@@ -28,6 +31,7 @@ function App() {
   const [boardSize, setBoardSize] = useState(320);
   const [isInitialized, setIsInitialized] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>('normal');
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
   
   const {
     state,
@@ -37,11 +41,30 @@ function App() {
     clearCell,
     toggleNote,
     toggleNoteMode,
-    useHint,
+    getHintInfo,
+    applyHint,
     resetGame,
     pauseGame,
     resumeGame,
   } = useSudoku();
+
+  const handleHintClick = useCallback(() => {
+    const hint = getHintInfo();
+    if (hint) {
+      toast(hint.description, {
+        description: `${hint.method} - 位置：第 ${hint.row + 1} 行第 ${hint.col + 1} 列，应填入 ${hint.number}`,
+        action: {
+          label: '填入答案',
+          onClick: () => {
+            applyHint(hint);
+          },
+        },
+        duration: 30000,
+        position: 'bottom-center',
+        closeButton: true,
+      });
+    }
+  }, [getHintInfo, applyHint]);
 
   useEffect(() => {
     if (!hasSavedGame()) {
@@ -130,8 +153,29 @@ function App() {
   const timerStyle: React.CSSProperties = {
     position: 'absolute',
     top: '24px',
+    left: '24px',
+    zIndex: 100,
+  };
+
+  const helpButtonStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '24px',
     right: '24px',
     zIndex: 100,
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    border: '2px solid #e8e4dd',
+    backgroundColor: '#fff',
+    color: '#4a5568',
+    fontSize: '18px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    transition: 'all 0.2s ease',
   };
 
   const headerStyle: React.CSSProperties = {
@@ -192,6 +236,14 @@ function App() {
         <Timer elapsedTime={state.elapsedTime} isPaused={state.isPaused} />
       </div>
 
+      <button
+        style={helpButtonStyle}
+        onClick={() => setHelpModalOpen(true)}
+        title="帮助"
+      >
+        ?
+      </button>
+
       <header style={headerStyle}>
         <h1 style={titleStyle}>数独</h1>
         <DifficultySelector
@@ -229,7 +281,7 @@ function App() {
           isPaused={state.isPaused}
           currentMode={gameMode}
           onToggleNote={toggleNoteMode}
-          onHint={useHint}
+          onHint={handleHintClick}
           onReset={resetGame}
           onPause={pauseGame}
           onResume={resumeGame}
@@ -241,8 +293,17 @@ function App() {
         isOpen={state.isComplete}
         time={state.elapsedTime}
         hintsUsed={state.hintsUsed}
-        onNewGame={() => startNewGame(state.size)}
+        onNewGame={() => startNewGame(state.size, gameMode)}
         onClose={() => {}}
+      />
+
+      <Toaster 
+        position="bottom-center"
+      />
+
+      <HelpModal
+        isOpen={helpModalOpen}
+        onClose={() => setHelpModalOpen(false)}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GameState, SudokuCell, HistoryEntry, CellPosition, Difficulty } from '../types';
-import { generateSudoku, getHint } from '../utils/generator';
+import { generateSudoku, findHint, type HintInfo } from '../utils/generator';
 import { checkConflicts, isComplete as checkIsComplete } from '../utils/validator';
 import type { GameMode } from '../components/ControlButtons';
 
@@ -241,57 +241,41 @@ export function useSudoku() {
     setState(prev => ({ ...prev, isNoteMode: !prev.isNoteMode }));
   }, []);
 
-  const undo = useCallback(() => {
-    setState(prev => {
-      if (prev.historyIndex < 0 || prev.isComplete) return prev;
-      
-      const entry = prev.history[prev.historyIndex];
-      const newGrid = prev.grid.map(r => r.map(c => ({ ...c, notes: [...c.notes] })));
-      
-      newGrid[entry.row][entry.col].value = entry.prevValue;
-      newGrid[entry.row][entry.col].notes = entry.prevNotes;
-      
-      return {
-        ...prev,
-        grid: newGrid,
-        historyIndex: prev.historyIndex - 1,
-        isComplete: false,
-      };
-    });
-  }, []);
 
-  const useHint = useCallback(() => {
+
+  const getHintInfo = useCallback((): HintInfo | null => {
+    if (state.grid.length === 0 || state.solution.length === 0) {
+      return null;
+    }
+    return findHint(state.grid, state.solution, state.size);
+  }, [state.grid, state.solution, state.size]);
+
+  const applyHint = useCallback((hintInfo: HintInfo) => {
     setState(prev => {
-      if (!prev.selectedCell || prev.isComplete) return prev;
-      
-      const hint = getHint(prev.grid, prev.solution);
-      if (!hint) return prev;
-      
       const newGrid = prev.grid.map(r => r.map(c => ({ ...c, notes: [...c.notes] })));
-      const correctValue = prev.solution[hint.row][hint.col];
       
       const historyEntry: HistoryEntry = {
         type: 'set',
-        row: hint.row,
-        col: hint.col,
-        prevValue: newGrid[hint.row][hint.col].value,
-        newValue: correctValue,
-        prevNotes: [...newGrid[hint.row][hint.col].notes],
+        row: hintInfo.row,
+        col: hintInfo.col,
+        prevValue: newGrid[hintInfo.row][hintInfo.col].value,
+        newValue: hintInfo.number,
+        prevNotes: [...newGrid[hintInfo.row][hintInfo.col].notes],
         newNotes: [],
       };
       
       const newHistory = prev.history.slice(0, prev.historyIndex + 1);
       newHistory.push(historyEntry);
       
-      newGrid[hint.row][hint.col].value = correctValue;
-      newGrid[hint.row][hint.col].notes = [];
+      newGrid[hintInfo.row][hintInfo.col].value = hintInfo.number;
+      newGrid[hintInfo.row][hintInfo.col].notes = [];
       
       const isComplete = checkIsComplete(newGrid, prev.size);
       
       const newState = {
         ...prev,
         grid: newGrid,
-        selectedCell: hint,
+        selectedCell: { row: hintInfo.row, col: hintInfo.col },
         history: newHistory,
         historyIndex: newHistory.length - 1,
         hintsUsed: prev.hintsUsed + 1,
@@ -371,8 +355,8 @@ export function useSudoku() {
     clearCell,
     toggleNote,
     toggleNoteMode,
-    undo,
-    useHint,
+    getHintInfo,
+    applyHint,
     resetGame,
     pauseGame,
     resumeGame,

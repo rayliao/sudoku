@@ -58,6 +58,7 @@ export function SudokuBoard({
             isRelated={relatedCells.has(`${rowIndex}-${colIndex}`)}
             isConflict={conflicts.has(`${rowIndex}-${colIndex}`)}
             isSameValue={selectedValue !== null && cell.value === selectedValue}
+            isDeadEnd={!!cell.isDeadEnd}
             size={size}
             cellSize={cellSize}
             row={rowIndex}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GameState, SudokuCell, HistoryEntry, CellPosition, Difficulty } from '../types';
-import { generateSudoku, findHint, type HintInfo } from '../utils/generator';
+import { generateSudoku, findHint, countSolutions, type HintInfo } from '../utils/generator';
 import { checkConflicts, isComplete as checkIsComplete } from '../utils/validator';
 import type { GameMode } from '../components/ControlButtons';
 
@@ -52,6 +52,21 @@ function saveState(state: GameState): void {
   } catch (e) {
     console.warn('Failed to save game state:', e);
   }
+}
+
+function getSubGridConfig(size: number): { rows: number; cols: number } {
+  switch (size) {
+    case 4: return { rows: 2, cols: 2 };
+    case 6: return { rows: 2, cols: 3 };
+    case 9: return { rows: 3, cols: 3 };
+    default: return { rows: 3, cols: 3 };
+  }
+}
+
+function checkGridSolvable(grid: SudokuCell[][], size: number): boolean {
+  const subGrid = getSubGridConfig(size);
+  const numGrid = grid.map(row => row.map(cell => cell.value ?? 0));
+  return countSolutions(numGrid, subGrid, 1) > 0;
 }
 
 function clearSavedState(): void {
@@ -142,9 +157,18 @@ export function useSudoku() {
       newGrid[row][col].value = num;
       newGrid[row][col].notes = [];
       newGrid[row][col].isValid = true;
+      newGrid[row][col].isDeadEnd = false;
       
       const conflicts = checkConflicts(newGrid, prev.size);
       const isComplete = checkIsComplete(newGrid, prev.size);
+      
+      // 如果没有硬冲突，检查当前盘面是否仍然可解
+      if (conflicts.size === 0 && !isComplete) {
+        const solvable = checkGridSolvable(newGrid, prev.size);
+        if (!solvable) {
+          newGrid[row][col].isDeadEnd = true;
+        }
+      }
       
       const newState = {
         ...prev,
@@ -186,6 +210,7 @@ export function useSudoku() {
       
       newGrid[row][col].value = null;
       newGrid[row][col].isValid = true;
+      newGrid[row][col].isDeadEnd = false;
       
       return {
         ...prev,
@@ -301,6 +326,7 @@ export function useSudoku() {
           value: cell.isFixed ? cell.value : null,
           notes: [],
           isValid: true,
+          isDeadEnd: false,
         }))
       );
       

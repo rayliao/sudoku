@@ -66,7 +66,7 @@ function isValidPlacement(
   return true;
 }
 
-function countSolutions(grid: number[][], subGrid: { rows: number; cols: number }, maxCount: number = 2): number {
+export function countSolutions(grid: number[][], subGrid: { rows: number; cols: number }, maxCount: number = 2): number {
   const size = grid.length;
   let count = 0;
   let foundEnough = false;

@@ -7,6 +7,7 @@ interface CellProps {
   isRelated: boolean;
   isConflict: boolean;
   isSameValue: boolean;
+  isDeadEnd: boolean;
   size: number;
   cellSize: number;
   row: number;
@@ -20,6 +21,7 @@ export const Cell = memo(function Cell({
   isRelated,
   isConflict,
   isSameValue,
+  isDeadEnd,
   size,
   cellSize,
   row,
@@ -55,6 +57,9 @@ export const Cell = memo(function Cell({
     if (isConflict) {
       return '#ea580c';
     }
+    if (isDeadEnd) {
+      return '#b45309';
+    }
     if (cell.value !== null) {
       return '#4a7c59';
     }
@@ -77,6 +82,9 @@ export const Cell = memo(function Cell({
     }
     if (isConflict) {
       return '#fff7ed';
+    }
+    if (isDeadEnd) {
+      return '#fef3c7';
     }
     if (isSameValue && cell.value !== null) {
       return '#fee2e2';

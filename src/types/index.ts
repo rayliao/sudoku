@@ -3,6 +3,7 @@ export interface SudokuCell {
   isFixed: boolean;
   isValid: boolean;
   notes: number[];
+  isDeadEnd?: boolean;
 }
 
 export interface CellPosition {
